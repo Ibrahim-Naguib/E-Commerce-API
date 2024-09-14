@@ -1,13 +1,3 @@
-const globalError = (err, req, res, next) => {
-  err.statusCode = err.statusCode || 500;
-  err.status = err.status || 'error';
-  if (process.env.NODE_ENV === 'development') {
-    sendErrorDev(err, res);
-  } else {
-    sendErrorProd(err, res);
-  }
-};
-
 const sendErrorDev = (err, res) => {
   res.status(err.statusCode).json({
     status: err.status,
@@ -21,6 +11,16 @@ const sendErrorProd = (err, res) => {
     status: err.status,
     message: err.message,
   });
+};
+
+const globalError = (err, req, res, next) => {
+  err.statusCode = err.statusCode || 500;
+  err.status = err.status || 'error';
+  if (process.env.NODE_ENV === 'development') {
+    sendErrorDev(err, res);
+  } else {
+    sendErrorProd(err, res);
+  }
 };
 
 module.exports = globalError;
