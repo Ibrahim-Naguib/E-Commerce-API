@@ -8,6 +8,7 @@ const brandRoute = require('./routes/brandRoute');
 const productRoute = require('./routes/productRoute');
 const ApiError = require('./utils/apiError');
 const globalError = require('./middlewares/errorMiddleware');
+const path = require('path');
 
 dotenv.config({
   path: 'config.env',
@@ -17,6 +18,7 @@ dbConnection();
 
 const app = express();
 app.use(express.json());
+app.use(express.static(path.join(__dirname, 'uploads')));
 
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
