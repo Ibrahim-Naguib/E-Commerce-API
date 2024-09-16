@@ -6,9 +6,12 @@ const categoryRoute = require('./routes/categoryRoute');
 const subCategoryRoute = require('./routes/subCategoryRoute');
 const brandRoute = require('./routes/brandRoute');
 const productRoute = require('./routes/productRoute');
+const userRoute = require('./routes/userRoute');
+const authRoute = require('./routes/authRoute');
 const ApiError = require('./utils/apiError');
 const globalError = require('./middlewares/errorMiddleware');
 const path = require('path');
+const cookieParser = require('cookie-parser');
 
 dotenv.config({
   path: 'config.env',
@@ -19,6 +22,7 @@ dbConnection();
 const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'uploads')));
+app.use(cookieParser());
 
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
@@ -29,6 +33,9 @@ app.use('/api/v1/categories', categoryRoute);
 app.use('/api/v1/subcategories', subCategoryRoute);
 app.use('/api/v1/brands', brandRoute);
 app.use('/api/v1/products', productRoute);
+app.use('/api/v1/users', userRoute);
+app.use('/api/v1/auth', authRoute);
+
 app.all('*', (req, res, next) => {
   next(new ApiError(`Can't find ${req.originalUrl} on this server`, 400));
 });
