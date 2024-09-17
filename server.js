@@ -1,17 +1,20 @@
 const express = require('express');
 const dotenv = require('dotenv');
 const morgan = require('morgan');
+const path = require('path');
 const dbConnection = require('./config/database');
+const ApiError = require('./utils/apiError');
+const globalError = require('./middlewares/errorMiddleware');
+const cookieParser = require('cookie-parser');
+
 const categoryRoute = require('./routes/categoryRoute');
 const subCategoryRoute = require('./routes/subCategoryRoute');
 const brandRoute = require('./routes/brandRoute');
 const productRoute = require('./routes/productRoute');
 const userRoute = require('./routes/userRoute');
 const authRoute = require('./routes/authRoute');
-const ApiError = require('./utils/apiError');
-const globalError = require('./middlewares/errorMiddleware');
-const path = require('path');
-const cookieParser = require('cookie-parser');
+const couponRoute = require('./routes/couponRoute');
+const cartRoute = require('./routes/cartRoute');
 
 dotenv.config({
   path: 'config.env',
@@ -35,6 +38,8 @@ app.use('/api/v1/brands', brandRoute);
 app.use('/api/v1/products', productRoute);
 app.use('/api/v1/users', userRoute);
 app.use('/api/v1/auth', authRoute);
+app.use('/api/v1/cart', cartRoute);
+app.use('/api/v1/coupons', couponRoute);
 
 app.all('*', (req, res, next) => {
   next(new ApiError(`Can't find ${req.originalUrl} on this server`, 400));
