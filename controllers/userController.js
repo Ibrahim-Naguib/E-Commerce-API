@@ -128,6 +128,12 @@ const updateLoggedUserPassword = asyncHandler(async (req, res, next) => {
 
   // Generate token
   const token = createToken(user._id);
+  res.cookie('jwt', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'None',
+    maxAge: 60 * 60 * 1000,
+  });
 
   res.status(200).json({ data: user, token });
 });
