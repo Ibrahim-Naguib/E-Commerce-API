@@ -48,6 +48,7 @@ const login = asyncHandler(async (req, res, next) => {
   res.cookie('jwt', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
+    sameSite: 'None',
     maxAge: 60 * 60 * 1000,
   });
 
@@ -191,7 +192,7 @@ const verifyPassResetCode = asyncHandler(async (req, res, next) => {
   // 1) Get user based on reset code
   const hashedResetCode = crypto
     .createHash('sha256')
-    .update(req.body.resetCode)
+    .update(String(req.body.resetCode))
     .digest('hex');
 
   const user = await User.findOne({

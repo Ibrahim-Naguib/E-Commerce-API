@@ -6,6 +6,7 @@ const dbConnection = require('./config/database');
 const ApiError = require('./utils/apiError');
 const globalError = require('./middlewares/errorMiddleware');
 const cookieParser = require('cookie-parser');
+const cors = require('cors');
 
 const categoryRoute = require('./routes/categoryRoute');
 const subCategoryRoute = require('./routes/subCategoryRoute');
@@ -22,10 +23,16 @@ dotenv.config({
 
 dbConnection();
 
+const corsOptions = {
+  origin: 'http://localhost:3000', // Specify your frontend's origin
+  credentials: true,               // Allow credentials (cookies) to be sent
+};
+
 const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'uploads')));
 app.use(cookieParser());
+app.use(cors(corsOptions));
 
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
