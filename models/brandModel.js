@@ -17,7 +17,7 @@ const brandSchema = new mongoose.Schema(
       type: String,
     },
   },
-  { timestamps: true }
+  { timestamps: true, versionKey: false }
 );
 
 const setImageURL = (doc) => {

@@ -16,6 +16,9 @@ const userRoute = require('./routes/userRoute');
 const authRoute = require('./routes/authRoute');
 const couponRoute = require('./routes/couponRoute');
 const cartRoute = require('./routes/cartRoute');
+const orderRoute = require('./routes/orderRoute');
+const reviewRoute = require('./routes/reviewRoute');
+const wishlistRoute = require('./routes/wishlistRoute');
 
 dotenv.config({
   path: 'config.env',
@@ -25,7 +28,7 @@ dbConnection();
 
 const corsOptions = {
   origin: 'http://localhost:3000', // Specify your frontend's origin
-  credentials: true,               // Allow credentials (cookies) to be sent
+  credentials: true, // Allow credentials (cookies) to be sent
 };
 
 const app = express();
@@ -47,6 +50,9 @@ app.use('/api/v1/users', userRoute);
 app.use('/api/v1/auth', authRoute);
 app.use('/api/v1/cart', cartRoute);
 app.use('/api/v1/coupons', couponRoute);
+app.use('/api/v1/orders', orderRoute);
+app.use('/api/v1/reviews', reviewRoute);
+app.use('/api/v1/wishlist', wishlistRoute);
 
 app.all('*', (req, res, next) => {
   next(new ApiError(`Can't find ${req.originalUrl} on this server`, 400));

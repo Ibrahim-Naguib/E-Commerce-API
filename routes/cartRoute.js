@@ -12,7 +12,7 @@ const { protect, allowedTo } = require('../controllers/authController');
 
 const router = express.Router();
 
-router.use(protect, allowedTo('user'));
+router.use(protect, allowedTo('user', 'admin'));
 router
   .route('/')
   .post(addProductToCart)

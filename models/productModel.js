@@ -67,7 +67,7 @@ const productSchema = new mongoose.Schema(
       default: 0,
     },
   },
-  { timestamps: true }
+  { timestamps: true, versionKey: false }
 );
 
 // mongoose middleware

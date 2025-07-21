@@ -14,17 +14,25 @@ const User = require('../models/userModel');
 // @route   GET /api/v1/auth/signup
 // @access  Public
 const signup = asyncHandler(async (req, res, next) => {
-  // 1- Create user
+  const { name, email, password } = req.body;
+  // 1) Check if email already exists
+  const existingUser = await User.findOne({ email });
+  if (existingUser) {
+    return next(new ApiError('Email already exists', 400));
+  }
+  // 2- Create user
   const user = await User.create({
     name: req.body.name,
     email: req.body.email,
     password: req.body.password,
   });
 
-  // 2- Generate token
-  const token = createToken(user._id);
+  // 3- Generate token
+  const accessToken = createToken(user._id);
 
-  res.status(201).json({ data: user, token });
+  delete user._doc.password;
+
+  res.status(201).json({ data: user, accessToken });
 });
 
 // @desc    Login
@@ -42,36 +50,24 @@ const login = asyncHandler(async (req, res, next) => {
     return next(new ApiError('Incorrect email or password', 401));
   }
   // 3) generate token
-  const token = createToken(user._id);
-
-  // 4) Set the JWT as an HTTP-only cookie
-  res.cookie('jwt', token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'None',
-    maxAge: 60 * 60 * 1000,
-  });
+  const accessToken = createToken(user._id);
 
   // Delete password from response
   delete user._doc.password;
 
-  res.status(200).json({ data: user });
+  res.status(200).json({ data: user, accessToken });
 });
 
 // @desc   make sure the user is logged in
 const protect = asyncHandler(async (req, res, next) => {
   // 1) Check if token exist, if exist get
   let token;
-  // 1) Check if the JWT token exists in cookies
-  if (req.cookies.jwt) {
-    token = req.cookies.jwt;
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith('Bearer')
+  ) {
+    token = req.headers.authorization.split(' ')[1];
   }
-  // if (
-  //   req.headers.authorization &&
-  //   req.headers.authorization.startsWith('Bearer')
-  // ) {
-  //   token = req.headers.authorization.split(' ')[1];
-  // }
   if (!token) {
     return next(
       new ApiError('You are not logged in! please log in to get access', 401)
@@ -108,19 +104,6 @@ const protect = asyncHandler(async (req, res, next) => {
 
   req.user = currentUser;
   next();
-});
-
-// @desc   Logout user
-// @route  GET /api/v1/auth/logout
-// @access Public
-const logout = asyncHandler(async (req, res, next) => {
-  // Clear the JWT cookie
-  res.cookie('jwt', '', {
-    httpOnly: true,
-    expires: new Date(0), // Set cookie expiration to the past to clear it
-  });
-
-  res.status(200).json({ message: 'Logged out successfully' });
 });
 
 // @desc    Authorization (User Permissions)
@@ -245,7 +228,6 @@ module.exports = {
   signup,
   login,
   protect,
-  logout,
   allowedTo,
   forgotPassword,
   verifyPassResetCode,
