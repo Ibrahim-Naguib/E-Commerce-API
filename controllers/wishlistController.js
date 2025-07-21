@@ -36,7 +36,7 @@ const addToWishlist = asyncHandler(async (req, res, next) => {
     return next(new ApiError('Product not found', 404));
   }
 
-  // Find or create user's wishlist
+  // Find user's wishlist (without population for accurate comparison)
   let wishlist = await Wishlist.findOne({ user: req.user._id });
 
   if (!wishlist) {

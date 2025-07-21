@@ -19,6 +19,8 @@ const cartRoute = require('./routes/cartRoute');
 const orderRoute = require('./routes/orderRoute');
 const reviewRoute = require('./routes/reviewRoute');
 const wishlistRoute = require('./routes/wishlistRoute');
+const adminRoute = require('./routes/adminRoute');
+const paymentRoute = require('./routes/paymentRoute');
 
 dotenv.config({
   path: 'config.env',
@@ -53,6 +55,8 @@ app.use('/api/v1/coupons', couponRoute);
 app.use('/api/v1/orders', orderRoute);
 app.use('/api/v1/reviews', reviewRoute);
 app.use('/api/v1/wishlist', wishlistRoute);
+app.use('/api/v1/admin', adminRoute);
+app.use('/api/v1/payments', paymentRoute);
 
 app.all('*', (req, res, next) => {
   next(new ApiError(`Can't find ${req.originalUrl} on this server`, 400));

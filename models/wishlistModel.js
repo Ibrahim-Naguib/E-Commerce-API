@@ -21,15 +21,6 @@ const wishlistSchema = new mongoose.Schema(
 // Ensure one wishlist per user
 wishlistSchema.index({ user: 1 }, { unique: true });
 
-// Populate products when querying
-wishlistSchema.pre(/^find/, function (next) {
-  this.populate({
-    path: 'products',
-    select: 'title price imageCover ratingsAverage',
-  });
-  next();
-});
-
 const Wishlist = mongoose.model('Wishlist', wishlistSchema);
 
 module.exports = Wishlist;
