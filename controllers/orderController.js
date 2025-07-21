@@ -1,12 +1,7 @@
-const {
-  getAllHandler,
-  getByIdHandler,
-  createHandler,
-  updateHandler,
-  deletehandler,
-} = require('./handlers');
+const { getAllHandler, deletehandler } = require('./handlers');
 const Order = require('../models/orderModel');
 const Cart = require('../models/cartModel');
+const { reserveStock } = require('./inventoryController');
 const asyncHandler = require('express-async-handler');
 const ApiError = require('../utils/apiError');
 
@@ -19,31 +14,60 @@ const createOrder = asyncHandler(async (req, res, next) => {
   const phone = req.body.phone || req.user.phone;
 
   // Get user's cart
-  const cart = await Cart.findOne({ user: userId });
+  const cart = await Cart.findOne({ user: userId }).populate({
+    path: 'cartItems.product',
+    select: 'title price quantity',
+  });
+
   if (!cart || cart.cartItems.length === 0) {
     return next(new ApiError('Cart is empty', 400));
+  }
+
+  // Reserve stock for all cart items
+  const { stockUpdates, errors } = await reserveStock(cart.cartItems);
+
+  // If there are any stock reservation errors, don't create the order
+  if (errors.length > 0) {
+    return res.status(400).json({
+      status: 'error',
+      message: 'Some items could not be reserved due to insufficient stock',
+      data: {
+        stock_errors: errors,
+        successful_reservations: stockUpdates,
+      },
+    });
   }
 
   // Get total price from cart
   const totalOrderPrice = cart.totalPriceAfterDiscount || cart.totalCartPrice;
 
-  // Create order
+  // Create order with reserved stock
   const order = await Order.create({
     user: userId,
-    cartItems: cart.cartItems,
+    cartItems: cart.cartItems.map((item) => ({
+      product: item.product._id,
+      quantity: item.quantity,
+      price: item.price,
+      color: item.color,
+    })),
     shippingAddress,
     phone,
     paymentMethod: paymentMethod || 'cash',
     totalOrderPrice,
+    status: 'pending',
+    paymentStatus: 'pending',
   });
 
-  // Clear user's cart after order creation
+  // Clear user's cart after successful order creation
   await Cart.findOneAndDelete({ user: userId });
 
   res.status(201).json({
     status: 'success',
     message: 'Order created successfully',
-    data: order,
+    data: {
+      order,
+      stock_updates: stockUpdates,
+    },
   });
 });
 

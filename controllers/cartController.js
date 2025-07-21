@@ -22,10 +22,24 @@ const addProductToCart = asyncHandler(async (req, res, next) => {
   const { productId, color } = req.body;
   const product = await Product.findById(productId);
 
+  if (!product) {
+    return next(new ApiError('Product not found', 404));
+  }
+
+  // Check if product is in stock
+  if (product.quantity <= 0) {
+    return next(new ApiError('Product is out of stock', 400));
+  }
+
   // 1) Get Cart for logged user
   let cart = await Cart.findOne({ user: req.user._id });
 
   if (!cart) {
+    // Check stock availability for new cart
+    if (product.quantity < 1) {
+      return next(new ApiError('Insufficient stock available', 400));
+    }
+
     // create cart fot logged user with product
     cart = await Cart.create({
       user: req.user._id,
@@ -39,10 +53,23 @@ const addProductToCart = asyncHandler(async (req, res, next) => {
 
     if (productIndex > -1) {
       const cartItem = cart.cartItems[productIndex];
-      cartItem.quantity += 1;
+      const newQuantity = cartItem.quantity + 1;
 
+      // Check if enough stock is available
+      if (product.quantity < newQuantity) {
+        return next(
+          new ApiError(`Only ${product.quantity} items available in stock`, 400)
+        );
+      }
+
+      cartItem.quantity = newQuantity;
       cart.cartItems[productIndex] = cartItem;
     } else {
+      // Check stock availability for new item
+      if (product.quantity < 1) {
+        return next(new ApiError('Insufficient stock available', 400));
+      }
+
       // product not exist in cart,  push product to cartItems array
       cart.cartItems.push({ product: productId, color, price: product.price });
     }
