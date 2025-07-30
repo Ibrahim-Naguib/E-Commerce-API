@@ -31,7 +31,7 @@ dbConnection();
 
 const corsOptions = {
   origin: 'http://localhost:3000', // Specify your frontend's origin
-  credentials: true, // Allow credentials (cookies) to be sent
+  credentials: true,
 };
 
 const app = express();

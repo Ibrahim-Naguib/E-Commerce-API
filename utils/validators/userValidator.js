@@ -34,13 +34,13 @@ const createUserValidator = [
     .isLength({ min: 6 })
     .withMessage('Password must be at least 6 characters')
     .custom((password, { req }) => {
-      if (password !== req.body.passwordConfirm) {
+      if (password !== req.body.confirmPassword) {
         throw new Error('Password confirmation incorrect');
       }
       return true;
     }),
 
-  check('passwordConfirm')
+  check('confirmPassword')
     .notEmpty()
     .withMessage('Password confirmation required'),
 
@@ -95,7 +95,7 @@ const changeUserPasswordValidator = [
   body('currentPassword')
     .notEmpty()
     .withMessage('You must enter your current password'),
-  body('passwordConfirm')
+  body('confirmPassword')
     .notEmpty()
     .withMessage('You must enter the password confirm'),
   body('password')
@@ -116,7 +116,7 @@ const changeUserPasswordValidator = [
       }
 
       // Verify password confirm
-      if (val !== req.body.passwordConfirm) {
+      if (val !== req.body.confirmPassword) {
         throw new Error('Password Confirmation incorrect');
       }
       return true;

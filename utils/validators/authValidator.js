@@ -26,11 +26,11 @@ const signupValidator = [
     .isLength({ min: 6 })
     .withMessage('Password must be at least 6 characters'),
 
-  check('passwordConfirm')
+  check('confirmPassword')
     .notEmpty()
     .withMessage('Password confirmation required')
-    .custom((passwordConfirm, { req }) => {
-      if (passwordConfirm !== req.body.password) {
+    .custom((confirmPassword, { req }) => {
+      if (confirmPassword !== req.body.password) {
         throw new Error('Password Confirmation incorrect');
       }
       return true;
