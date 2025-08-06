@@ -6,7 +6,11 @@ const bcrypt = require('bcryptjs');
 const asyncHandler = require('express-async-handler');
 const ApiError = require('../utils/apiError');
 const sendEmail = require('../utils/sendEmail');
-const createToken = require('../utils/createToken');
+const {
+  generateTokens,
+  setTokenCookie,
+  clearTokenCookies,
+} = require('../utils/tokens');
 
 const User = require('../models/userModel');
 
@@ -28,17 +32,18 @@ const signup = asyncHandler(async (req, res, next) => {
   });
 
   // 3- Generate token
-  const accessToken = createToken(user._id);
+  const { accessToken, refreshToken } = generateTokens(user._id);
+  setTokenCookie(res, refreshToken);
 
   delete user._doc.password;
 
   res.status(201).json({ data: user, accessToken });
 });
 
-// @desc    Login
-// @route   GET /api/v1/auth/login
+// @desc    Sign in
+// @route   GET /api/v1/auth/signin
 // @access  Public
-const login = asyncHandler(async (req, res, next) => {
+const signin = asyncHandler(async (req, res, next) => {
   // 1) check if password and email in the body (validation)
   if (!req.body.email || !req.body.password) {
     return next(new ApiError('Please provide email and password', 400));
@@ -50,12 +55,55 @@ const login = asyncHandler(async (req, res, next) => {
     return next(new ApiError('Incorrect email or password', 401));
   }
   // 3) generate token
-  const accessToken = createToken(user._id);
+  const { accessToken, refreshToken } = generateTokens(user._id);
+  setTokenCookie(res, refreshToken);
 
   // Delete password from response
   delete user._doc.password;
 
   res.status(200).json({ data: user, accessToken });
+});
+
+// @desc    Sign out
+// @route   GET /api/v1/auth/signout
+// @access  Public
+const signout = asyncHandler(async (req, res, next) => {
+  clearTokenCookies(res);
+
+  res.json({ message: 'Logged out successfully' });
+});
+
+// @desc    Refresh access token
+// @route   POST /api/v1/auth/refresh
+// @access  Public
+const refresh = asyncHandler(async (req, res, next) => {
+  const { refreshToken } = req.cookies;
+
+  if (!refreshToken) {
+    return next(new ApiError('No refresh token provided', 401));
+  }
+
+  let decoded;
+  try {
+    decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+  } catch (error) {
+    clearTokenCookies(res);
+
+    return next(new ApiError('Invalid refresh token', 403));
+  }
+  const userId = decoded.userId;
+  const user = await User.findById(userId);
+  if (!user) {
+    clearTokenCookies(res);
+    return next(new ApiError('User no longer exists', 401));
+  }
+
+  const { accessToken, refreshToken: newRefreshToken } = generateTokens(userId);
+  setTokenCookie(res, newRefreshToken);
+
+  res.json({
+    accessToken,
+  });
 });
 
 // @desc   make sure the user is logged in
@@ -75,13 +123,13 @@ const protect = asyncHandler(async (req, res, next) => {
   }
 
   // 2) Verify token (no change happens, expired token)
-  const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+  const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
 
   // 3) Check if user exists
   const currentUser = await User.findById(decoded.userId);
   if (!currentUser) {
     return next(
-      new ApiError('User does not exist anymore. please login again..', 401)
+      new ApiError('User does not exist anymore. please sign in again..', 401)
     );
   }
 
@@ -95,7 +143,7 @@ const protect = asyncHandler(async (req, res, next) => {
     if (passChangedTimestamp > decoded.iat) {
       return next(
         new ApiError(
-          'User recently changed his password. please login again..',
+          'User recently changed his password. please sign in again..',
           401
         )
       );
@@ -220,13 +268,16 @@ const resetPassword = asyncHandler(async (req, res, next) => {
   await user.save();
 
   // 3) if everything is ok, generate token
-  const token = createToken(user._id);
-  res.status(200).json({ token });
+  const { accessToken, refreshToken } = generateTokens(user._id);
+  setTokenCookie(res, refreshToken);
+  res.status(200).json({ accessToken });
 });
 
 module.exports = {
   signup,
-  login,
+  signin,
+  refresh,
+  signout,
   protect,
   allowedTo,
   forgotPassword,

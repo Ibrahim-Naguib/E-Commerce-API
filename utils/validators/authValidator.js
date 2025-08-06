@@ -39,7 +39,7 @@ const signupValidator = [
   validatorMiddleware,
 ];
 
-const loginValidator = [
+const signinValidator = [
   check('email')
     .notEmpty()
     .withMessage('Email is required')
@@ -55,4 +55,4 @@ const loginValidator = [
   validatorMiddleware,
 ];
 
-module.exports = { signupValidator, loginValidator };
+module.exports = { signupValidator, signinValidator };

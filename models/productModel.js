@@ -81,14 +81,31 @@ productSchema.pre(/^find/, function (next) {
 
 const setImageURL = (doc) => {
   if (doc.imageCover) {
-    const imageUrl = `${process.env.BASE_URL}/products/${doc.imageCover}`;
-    doc.imageCover = imageUrl;
+    // Check if it's already a full URL (starts with http:// or https://)
+    if (
+      doc.imageCover.startsWith('http://') ||
+      doc.imageCover.startsWith('https://')
+    ) {
+      // It's already a full URL, keep as is
+      // doc.imageCover = doc.imageCover; // No change needed
+    } else {
+      // It's a local filename, prepend base URL
+      const imageUrl = `${process.env.BASE_URL}/products/${doc.imageCover}`;
+      doc.imageCover = imageUrl;
+    }
   }
   if (doc.images) {
     const imagesList = [];
     doc.images.forEach((image) => {
-      const imageUrl = `${process.env.BASE_URL}/products/${image}`;
-      imagesList.push(imageUrl);
+      // Check if it's already a full URL
+      if (image.startsWith('http://') || image.startsWith('https://')) {
+        // It's already a full URL, keep as is
+        imagesList.push(image);
+      } else {
+        // It's a local filename, prepend base URL
+        const imageUrl = `${process.env.BASE_URL}/products/${image}`;
+        imagesList.push(imageUrl);
+      }
     });
     doc.images = imagesList;
   }

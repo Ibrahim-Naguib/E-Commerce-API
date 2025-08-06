@@ -7,7 +7,7 @@ const { deletehandler } = require('./handlers');
 const ApiError = require('../utils/apiError');
 const ApiFeatures = require('../utils/apiFeatures');
 const { uploadSingleImage } = require('../middlewares/uploadImageMiddleware');
-const createToken = require('../utils/createToken');
+const { generateTokens, setTokenCookie } = require('../utils/tokens');
 const User = require('../models/userModel');
 
 // Upload single image
@@ -159,7 +159,8 @@ const updateLoggedUserPassword = asyncHandler(async (req, res, next) => {
   );
 
   // Generate token
-  const accessToken = createToken(user._id);
+  const { accessToken, refreshToken } = generateTokens(user._id);
+  setTokenCookie(res, refreshToken);
 
   // Delete password from response
   delete user._doc.password;

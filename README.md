@@ -42,8 +42,8 @@ This project is a RESTful API for managing an e-commerce platform, built using N
 ### Authentication
 
 - `POST /api/v1/auth/signup` - Register a new user
-- `POST /api/v1/auth/login` - User login
-- `POST /api/v1/auth/logout` - User logout
+- `POST /api/v1/auth/signin` - User signin
+- `POST /api/v1/auth/signout` - User signout
 
 ### Cart
 
