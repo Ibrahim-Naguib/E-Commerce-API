@@ -7,7 +7,11 @@ const Product = require('../models/productModel');
 // @route GET /api/v1/wishlist
 // @access Private/User
 const getWishlist = asyncHandler(async (req, res, next) => {
-  let wishlist = await Wishlist.findOne({ user: req.user._id });
+  // Fetch wishlist and populate product essentials for frontend display
+  let wishlist = await Wishlist.findOne({ user: req.user._id }).populate({
+    path: 'products',
+    select: 'title price imageCover ratingsAverage',
+  });
 
   if (!wishlist) {
     // Create empty wishlist if doesn't exist
@@ -92,6 +96,11 @@ const removeFromWishlist = asyncHandler(async (req, res, next) => {
   );
 
   await wishlist.save();
+  // Populate products for consistency on response
+  await wishlist.populate({
+    path: 'products',
+    select: 'title price imageCover ratingsAverage',
+  });
 
   res.status(200).json({
     status: 'success',
@@ -113,6 +122,11 @@ const clearWishlist = asyncHandler(async (req, res, next) => {
   // Clear all products from wishlist
   wishlist.products = [];
   await wishlist.save();
+  // Populate (will return empty products array, but keeps shape consistent)
+  await wishlist.populate({
+    path: 'products',
+    select: 'title price imageCover ratingsAverage',
+  });
 
   res.status(200).json({
     status: 'success',
