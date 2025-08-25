@@ -17,6 +17,10 @@ const {
   deleteProductValidator,
 } = require('../utils/validators/productValidator');
 const { protect, allowedTo } = require('../controllers/authController');
+const reviewsRoute = require('./reviewRoute');
+
+// Nested route for product reviews
+router.use('/:productId/reviews', reviewsRoute);
 
 router
   .route('/')

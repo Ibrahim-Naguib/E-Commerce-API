@@ -2,7 +2,6 @@ const slugify = require('slugify');
 const { check } = require('express-validator');
 const validatorMiddleware = require('../../middlewares/validatorMiddleware');
 const User = require('../../models/userModel');
-const bcrypt = require('bcryptjs');
 
 const signupValidator = [
   check('name')
@@ -19,14 +18,7 @@ const signupValidator = [
     .notEmpty()
     .withMessage('Email is required')
     .isEmail()
-    .withMessage('Invalid email address')
-    .custom((val) =>
-      User.findOne({ email: val }).then((user) => {
-        if (user) {
-          return Promise.reject(new Error('E-mail already exists'));
-        }
-      })
-    ),
+    .withMessage('Invalid email address'),
 
   check('password')
     .notEmpty()
@@ -34,11 +26,11 @@ const signupValidator = [
     .isLength({ min: 6 })
     .withMessage('Password must be at least 6 characters'),
 
-  check('passwordConfirm')
+  check('confirmPassword')
     .notEmpty()
     .withMessage('Password confirmation required')
-    .custom((passwordConfirm, { req }) => {
-      if (passwordConfirm !== req.body.password) {
+    .custom((confirmPassword, { req }) => {
+      if (confirmPassword !== req.body.password) {
         throw new Error('Password Confirmation incorrect');
       }
       return true;
@@ -47,35 +39,20 @@ const signupValidator = [
   validatorMiddleware,
 ];
 
-const loginValidator = [
+const signinValidator = [
   check('email')
     .notEmpty()
-    .withMessage('Email required')
+    .withMessage('Email is required')
     .isEmail()
-    .withMessage('Invalid email address')
-    .custom((val) =>
-      User.findOne({ email: val }).then((user) => {
-        if (!user) {
-          return Promise.reject(new Error(`E-mail doesn't exists, please signup`));
-        }
-      })
-    ),
-  
+    .withMessage('Invalid email address'),
+
   check('password')
     .notEmpty()
-    .withMessage('Password required')
+    .withMessage('Password is required')
     .isLength({ min: 6 })
-    .withMessage('Password must be at least 6 characters')
-    .custom(async (val, { req }) => {
-      const user = await User.findOne({ email: req.body.email });
-        if (user && !(await bcrypt.compare(val, user.password))) {
-          throw new Error('Password is incorrect');
-        }
-      }
-    ),
-
+    .withMessage('Password must be at least 6 characters'),
 
   validatorMiddleware,
 ];
 
-module.exports = { signupValidator, loginValidator };
+module.exports = { signupValidator, signinValidator };

@@ -5,6 +5,8 @@ const {
   updateHandler,
   deletehandler,
 } = require('./handlers');
+const asyncHandler = require('express-async-handler');
+const ApiError = require('../utils/apiError');
 const Coupon = require('../models/couponModel');
 
 // @desc    Get list of coupons
@@ -32,10 +34,41 @@ const updateCoupon = updateHandler(Coupon);
 // @access  Private/Admin-Manager
 const deleteCoupon = deletehandler(Coupon);
 
+// @desc    Validate coupon (public endpoint)
+// @route   POST /api/v1/coupons/validate
+// @access  Public
+const validateCoupon = asyncHandler(async (req, res, next) => {
+  const { couponName } = req.body;
+
+  if (!couponName) {
+    return next(new ApiError('Coupon name is required', 400));
+  }
+
+  // Find coupon by name and check if it's not expired
+  const coupon = await Coupon.findOne({
+    name: couponName.toUpperCase(),
+    expire: { $gt: Date.now() },
+  });
+
+  if (!coupon) {
+    return next(new ApiError('Invalid or expired coupon', 400));
+  }
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      name: coupon.name,
+      discount: coupon.discount,
+      expire: coupon.expire,
+    },
+  });
+});
+
 module.exports = {
   getCoupons,
   getCoupon,
   createCoupon,
   updateCoupon,
   deleteCoupon,
+  validateCoupon,
 };

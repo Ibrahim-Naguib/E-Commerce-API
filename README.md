@@ -1,52 +1,106 @@
 # E-Commerce API
 
-This project is a RESTful API for managing an e-commerce platform, built using Node.js, Express, and MongoDB. It supports full CRUD operations for categories, subcategories, brands, and products, along with secure authentication and cart management.
+A comprehensive RESTful API for managing an e-commerce platform, built with Node.js, Express, and MongoDB.
 
-## Features
+## 🚀 Features
 
-- **Categories, Subcategories, Brands, Products:**
+- **Product Management** - Categories, subcategories, brands, and products with full CRUD operations
+- **User Authentication** - Secure JWT-based authentication and authorization
+- **Shopping Cart** - Complete cart management with coupon support
+- **Order Processing** - Full order lifecycle management
+- **Payment Integration** - Stripe payment processing
+- **Reviews & Ratings** - Product review system
+- **Inventory Management** - Stock tracking and alerts
+- **Admin Dashboard** - Statistics and administrative tools
 
-  - Full CRUD operations (Create, Read, Update, Delete)
+## 📖 API Documentation
 
-- **Authentication:**
+**Interactive API Documentation:** Access the complete API documentation with examples and testing capabilities:
 
-  - Secure user authentication and authorization using JWT
-  - Protect access to sensitive routes and user-specific data
+- **Development:** `http://localhost:8000/api-docs`
+- **Swagger UI:** Full interactive documentation with all endpoints, schemas, and examples
 
-- **Shopping Cart:**
-  - Add, remove, and manage items in the cart
-  - Apply coupons for discount
+## 🛠️ Quick Start
 
-## Endpoints
+### Prerequisites
 
-### Categories
+- Node.js (v14+)
+- MongoDB
+- npm or yarn
 
-- `GET /api/v1/categories` - Get all categories
-- `POST /api/v1/categories` - Create a new category
-- `GET /api/v1/categories/:id` - Get a single category
-- `PUT /api/v1/categories/:id` - Update a category
-- `DELETE /api/v1/categories/:id` - Delete a category
+### Installation
 
-### Subcategories
+1. **Clone the repository**
 
-- Similar CRUD endpoints as categories
+   ```bash
+   git clone <repository-url>
+   cd ecommerce-api
+   ```
 
-### Brands
+2. **Install dependencies**
 
-- Similar CRUD endpoints as categories
+   ```bash
+   npm install
+   ```
 
-### Products
+3. **Environment Setup**
 
-- Similar CRUD endpoints as categories
+   ```bash
+   cp config.env.example config.env
+   # Edit config.env with your configuration
+   ```
 
-### Authentication
+4. **Start the server**
+   ```bash
+   npm start
+   ```
 
-- `POST /api/v1/auth/signup` - Register a new user
-- `POST /api/v1/auth/login` - User login
-- `POST /api/v1/auth/logout` - User logout
+The API will be running at `http://localhost:8000/api/v1`
 
-### Cart
+## 🏗️ Project Structure
 
-- `GET /api/v1/cart` - Get user’s cart
-- `POST /api/v1/cart` - Add item to cart
-- `DELETE /api/v1/cart/:itemId` - Remove item from cart
+```
+├── controllers/    # Request handlers
+├── models/         # Database models
+├── routes/         # API routes
+├── middlewares/    # Custom middleware
+├── utils/          # Utility functions
+├── docs/           # API documentation
+└── uploads/        # File uploads
+```
+
+## 🔧 Environment Variables
+
+Key environment variables (see `config.env.example`):
+
+## 📚 API Overview
+
+The API provides endpoints for:
+
+- **Authentication** - Signup, signin, password reset
+- **Products** - Product catalog management
+- **Categories & Brands** - Organizational structure
+- **Cart & Orders** - Shopping and purchase flow
+- **Payments** - Stripe integration
+- **Reviews** - Product ratings and reviews
+- **Users** - Profile management
+- **Admin** - Administrative functions
+
+For detailed endpoint documentation, visit `/api-docs` when the server is running.
+
+## 🔒 Security Features
+
+- JWT-based authentication
+- Password hashing with bcrypt
+- Rate limiting
+- Input validation and sanitization
+- CORS configuration
+- File upload restrictions
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Open a Pull Request

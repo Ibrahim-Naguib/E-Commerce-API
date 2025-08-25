@@ -22,10 +22,24 @@ const addProductToCart = asyncHandler(async (req, res, next) => {
   const { productId, color } = req.body;
   const product = await Product.findById(productId);
 
+  if (!product) {
+    return next(new ApiError('Product not found', 404));
+  }
+
+  // Check if product is in stock
+  if (product.quantity <= 0) {
+    return next(new ApiError('Product is out of stock', 400));
+  }
+
   // 1) Get Cart for logged user
   let cart = await Cart.findOne({ user: req.user._id });
 
   if (!cart) {
+    // Check stock availability for new cart
+    if (product.quantity < 1) {
+      return next(new ApiError('Insufficient stock available', 400));
+    }
+
     // create cart fot logged user with product
     cart = await Cart.create({
       user: req.user._id,
@@ -39,10 +53,23 @@ const addProductToCart = asyncHandler(async (req, res, next) => {
 
     if (productIndex > -1) {
       const cartItem = cart.cartItems[productIndex];
-      cartItem.quantity += 1;
+      const newQuantity = cartItem.quantity + 1;
 
+      // Check if enough stock is available
+      if (product.quantity < newQuantity) {
+        return next(
+          new ApiError(`Only ${product.quantity} items available in stock`, 400)
+        );
+      }
+
+      cartItem.quantity = newQuantity;
       cart.cartItems[productIndex] = cartItem;
     } else {
+      // Check stock availability for new item
+      if (product.quantity < 1) {
+        return next(new ApiError('Insufficient stock available', 400));
+      }
+
       // product not exist in cart,  push product to cartItems array
       cart.cartItems.push({ product: productId, color, price: product.price });
     }
@@ -188,6 +215,93 @@ const applyCoupon = asyncHandler(async (req, res, next) => {
   });
 });
 
+// @desc    Sync local cart with backend cart (merge and return merged cart)
+// @route   POST /api/v1/cart/sync
+// @access  Private/User
+const syncCart = asyncHandler(async (req, res, next) => {
+  const { cartItems: localCartItems } = req.body;
+
+  if (!localCartItems || !Array.isArray(localCartItems)) {
+    return next(new ApiError('Cart items are required', 400));
+  }
+
+  // Get or create user's cart
+  let cart = await Cart.findOne({ user: req.user._id }).populate({
+    path: 'cartItems.product',
+    select: 'title price imageCover quantity',
+  });
+
+  if (!cart) {
+    // Create new cart if none exists
+    cart = await Cart.create({
+      user: req.user._id,
+      cartItems: [],
+    });
+  }
+
+  // Merge logic: for each local cart item
+  for (const localItem of localCartItems) {
+    // Validate product exists
+    const product = await Product.findById(localItem.product);
+    if (!product) {
+      console.warn(`Product ${localItem.product} not found, skipping`);
+      continue;
+    }
+
+    // Check if item already exists in backend cart
+    const existingItemIndex = cart.cartItems.findIndex(
+      (item) => item.product._id.toString() === localItem.product
+    );
+
+    if (existingItemIndex > -1) {
+      // Item exists, merge quantities (take the higher quantity)
+      const existingItem = cart.cartItems[existingItemIndex];
+      const mergedQuantity = Math.max(
+        existingItem.quantity,
+        localItem.quantity
+      );
+
+      // Check stock availability
+      if (product.quantity >= mergedQuantity) {
+        existingItem.quantity = mergedQuantity;
+        existingItem.price = product.price; // Update to current price
+      } else {
+        // Use available stock
+        existingItem.quantity = Math.min(mergedQuantity, product.quantity);
+      }
+    } else {
+      // Item doesn't exist, add it
+      const quantityToAdd = Math.min(localItem.quantity, product.quantity);
+
+      if (quantityToAdd > 0) {
+        cart.cartItems.push({
+          product: localItem.product,
+          quantity: quantityToAdd,
+          price: product.price,
+          color: localItem.color,
+        });
+      }
+    }
+  }
+
+  // Calculate total and save
+  calcTotalCartPrice(cart);
+  await cart.save();
+
+  // Populate the cart for response
+  await cart.populate({
+    path: 'cartItems.product',
+    select: 'title price imageCover quantity',
+  });
+
+  res.status(200).json({
+    status: 'success',
+    message: 'Cart synced successfully',
+    numOfCartItems: cart.cartItems.length,
+    data: cart,
+  });
+});
+
 module.exports = {
   addProductToCart,
   getLoggedUserCart,
@@ -195,4 +309,5 @@ module.exports = {
   clearCart,
   updateCartItemQuantity,
   applyCoupon,
+  syncCart,
 };

@@ -24,8 +24,10 @@ const uploadProductImages = uploadMixOfImages([
 
 const resizeProductImages = asyncHandler(async (req, res, next) => {
   // console.log(req.files);
+
   //1- Image processing for imageCover
-  if (req.files.imageCover) {
+  if (req.files && req.files.imageCover) {
+    // Handle file upload
     const imageCoverFileName = `product-${uuidv4()}-${Date.now()}-cover.jpeg`;
 
     await sharp(req.files.imageCover[0].buffer)
@@ -34,11 +36,15 @@ const resizeProductImages = asyncHandler(async (req, res, next) => {
       .jpeg({ quality: 95 })
       .toFile(`uploads/products/${imageCoverFileName}`);
 
-    // Save image into our db
+    // Save image filename into our db
     req.body.imageCover = imageCoverFileName;
+  } else if (req.body.imageCover && typeof req.body.imageCover === 'string') {
+    // No processing needed for URLs
   }
+
   //2- Image processing for images
-  if (req.files.images) {
+  if (req.files && req.files.images) {
+    // Handle file uploads
     req.body.images = [];
     await Promise.all(
       req.files.images.map(async (img, index) => {
@@ -50,11 +56,18 @@ const resizeProductImages = asyncHandler(async (req, res, next) => {
           .jpeg({ quality: 95 })
           .toFile(`uploads/products/${imageName}`);
 
-        // Save image into our db
+        // Save image filename into our db
         req.body.images.push(imageName);
       })
     );
+  } else if (req.body.images && Array.isArray(req.body.images)) {
+    // Handle URLs - keep as is (they're already URL strings)
+    // Filter out any empty strings
+    req.body.images = req.body.images.filter(
+      (img) => img && typeof img === 'string'
+    );
   }
+
   next();
 });
 

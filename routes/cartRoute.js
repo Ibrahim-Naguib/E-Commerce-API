@@ -1,4 +1,6 @@
 const express = require('express');
+const { protect, allowedTo } = require('../controllers/authController');
+const router = express.Router();
 
 const {
   addProductToCart,
@@ -7,19 +9,19 @@ const {
   clearCart,
   updateCartItemQuantity,
   applyCoupon,
+  syncCart,
 } = require('../controllers/cartController');
-const { protect, allowedTo } = require('../controllers/authController');
 
-const router = express.Router();
+router.use(protect, allowedTo('user', 'admin'));
 
-router.use(protect, allowedTo('user'));
+router.post('/sync', syncCart);
+router.put('/applyCoupon', applyCoupon);
+
 router
   .route('/')
   .post(addProductToCart)
   .get(getLoggedUserCart)
   .delete(clearCart);
-
-router.put('/applyCoupon', applyCoupon);
 
 router
   .route('/:itemId')

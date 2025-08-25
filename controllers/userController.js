@@ -3,15 +3,11 @@ const { v4: uuidv4 } = require('uuid');
 const sharp = require('sharp');
 const bcrypt = require('bcryptjs');
 
-const {
-  getAllHandler,
-  getByIdHandler,
-  createHandler,
-  deletehandler,
-} = require('./handlers');
+const { deletehandler } = require('./handlers');
 const ApiError = require('../utils/apiError');
+const ApiFeatures = require('../utils/apiFeatures');
 const { uploadSingleImage } = require('../middlewares/uploadImageMiddleware');
-const createToken = require('../utils/createToken');
+const { generateTokens, setTokenCookie } = require('../utils/tokens');
 const User = require('../models/userModel');
 
 // Upload single image
@@ -38,17 +34,53 @@ const resizeImage = asyncHandler(async (req, res, next) => {
 // @desc    Get list of users
 // @route   GET /api/v1/users
 // @access  Private/Admin
-const getUsers = getAllHandler(User);
+const getUsers = asyncHandler(async (req, res) => {
+  let filter = {};
+  if (req.filterObject) {
+    filter = req.filterObject;
+  }
+  const documentsCount = await User.countDocuments();
+  const apiFeatures = new ApiFeatures(
+    User.find(filter).select('-password'),
+    req.query
+  )
+    .filter()
+    .search('User')
+    .sort()
+    .limitFields()
+    .paginate(documentsCount);
+
+  const { mongooseQuery, paginationData } = apiFeatures;
+  const documents = await mongooseQuery;
+
+  res
+    .status(200)
+    .json({ results: documents.length, paginationData, data: documents });
+});
 
 // @desc    Get specific user by id
 // @route   GET /api/v1/users/:id
 // @access  Private/Admin
-const getUser = getByIdHandler(User);
+const getUser = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+  const document = await User.findById(id).select('-password');
+  if (!document) {
+    return next(new ApiError(`No user found for this id ${id}`, 404));
+  }
+  res.status(200).json({ data: document });
+});
 
 // @desc    Create user
 // @route   POST  /api/v1/users
 // @access  Private/Admin
-const createUser = createHandler(User);
+const createUser = asyncHandler(async (req, res) => {
+  const newDocument = await User.create(req.body);
+
+  // Delete password from response
+  delete newDocument._doc.password;
+
+  res.status(201).json({ data: newDocument });
+});
 
 // @desc    Update specific user
 // @route   PUT /api/v1/users/:id
@@ -127,15 +159,13 @@ const updateLoggedUserPassword = asyncHandler(async (req, res, next) => {
   );
 
   // Generate token
-  const token = createToken(user._id);
-  res.cookie('jwt', token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'None',
-    maxAge: 60 * 60 * 1000,
-  });
+  const { accessToken, refreshToken } = generateTokens(user._id);
+  setTokenCookie(res, refreshToken);
 
-  res.status(200).json({ data: user, token });
+  // Delete password from response
+  delete user._doc.password;
+
+  res.status(200).json({ data: user, accessToken });
 });
 
 // @desc    Update logged user data (without password, role)
