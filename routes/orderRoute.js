@@ -34,7 +34,7 @@ router
   .route('/:id')
   .get(getOrderValidator, getOrder)
   .put(allowedTo('admin', 'manager'), updateOrderValidator, updateOrder)
-  .delete(allowedTo('admin'), getOrderValidator, deleteOrder);
+  .delete(allowedTo('admin', 'manager'), getOrderValidator, deleteOrder);
 
 // Cancel order route (accessible by order owner or admin)
 router.put('/:id/cancel', getOrderValidator, cancelOrder);

@@ -7,6 +7,9 @@ const ApiError = require('./utils/apiError');
 const globalError = require('./middlewares/errorMiddleware');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
+const helmet = require('helmet');
+const swaggerUi = require('swagger-ui-express');
+const swaggerDocument = require(path.join(__dirname, './docs/openapi.json'));
 
 const categoryRoute = require('./routes/categoryRoute');
 const subCategoryRoute = require('./routes/subCategoryRoute');
@@ -39,6 +42,12 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'uploads')));
 app.use(cookieParser());
 app.use(cors(corsOptions));
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+  })
+);
 
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
@@ -59,6 +68,7 @@ app.use('/api/v1/wishlist', wishlistRoute);
 app.use('/api/v1/admin', adminRoute);
 app.use('/api/v1/payments', paymentRoute);
 app.use('/api/v1/inventory', inventoryRoute);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.all('*', (req, res, next) => {
   next(new ApiError(`Can't find ${req.originalUrl} on this server`, 400));
