@@ -1,7 +1,16 @@
 node_modules/
+dist/
+coverage/
+.rules/
+.github/
 
 config.env
+.env
+.env.local
+.env.test
 
 uploads/
 
 data.txt
+pnpm-debug.log*
+plan.md
